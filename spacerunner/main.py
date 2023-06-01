@@ -3,11 +3,14 @@ import pygame  # játék funckiók
 import os  # Operációs rendszer parancsai, elérési utvonalakhoz fog kelleni
 import math  # különböző számításokat, sebzéseket, stb ez fog megoldani
 import random  # Random elemek generálása(kövi órán meteorok)
+
+# TODO: lehetett volna a konstansokat kiszervezni másik .py fileba
+
 # Értékek inicializálása
 pygame.font.init()
 pygame.mixer.init()
 # Konstansok - > nem változnak az értékek, csak nagybetűvel vannak írva
-WIDTH, HEIGHT = 900, 500
+WIDTH, HEIGHT = 900, 550
 # Ablak mérete
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
 # Ablak címe
@@ -49,9 +52,8 @@ REDSSIMAGE = pygame.image.load(
     os.path.join("Assets", "spaceship_red.png"))
 REDSPACESHIP = pygame.transform.rotate(
     pygame.transform.scale(REDSSIMAGE, (SSW, SSH)), 270)
-# Sárga kontroller
 
-
+# Sárga kontroller irányok alapján mondjuk meg, hogy éppen mi növekedjen, vagy csökkenjen
 def yellowControl(keysPressed, yellow):
     if keysPressed[pygame.K_a] and yellow.x - VEL > -15:  # balra
         yellow.x -= VEL
@@ -62,7 +64,7 @@ def yellowControl(keysPressed, yellow):
     if keysPressed[pygame.K_s] and yellow.y + VEL + yellow.width < HEIGHT:  # le
         yellow.y += VEL
 
-
+# Piros kontroller irányok alapján mondjuk meg, hogy éppen mi növekedjen, vagy csökkenjen
 def redControl(keysPressed, red):
     if keysPressed[pygame.K_LEFT] and red.x - VEL + 15 > BORDER.x + BORDER.width:  # balra
         red.x -= VEL
@@ -75,6 +77,7 @@ def redControl(keysPressed, red):
 
 
 def drawWindow(red, yellow, redBullets, yellowBullets, redHealth, yellowHealth):
+    #Ablak építse meg a SPace konstant ami a háttér lesz, é 0,0 pozícióból induljon el
     WINDOW.blit(SPACE, (0, 0))
     pygame.draw.rect(WINDOW, BLACK, BORDER)
     redHealthText = HEALTFONT.render(f"Élet:{redHealth}", True, WHITE)
@@ -91,7 +94,26 @@ def drawWindow(red, yellow, redBullets, yellowBullets, redHealth, yellowHealth):
 
 
 def handleBullets(yellowBullets, redBullets, yellow, red):
-    pass
+    #Megvizsgáljuk a sárga töltényeket
+    for bullet in yellowBullets:
+        #Növeljük a pozícit, így jobbra fog menni a töltény, a BULETVEL értékével
+        bullet.x += BULLETVEL
+        #Ha eltaláljuk a piros entitást(szereplőt), akkor tünjön el
+        if red.colliderect(bullet):
+            pygame.event.post(pygame.event.Event(REDHIT))
+            yellowBullets.remove(bullet)
+            #Vagy, ha kimegy a pálya szélére
+        elif bullet.x > WIDTH:
+            yellowBullets.remove(bullet)
+    #Ugyan az a logika mind a kettőnél csak egyik jobbra, másik balra lő
+    for bullet in redBullets:
+        bullet.x -= BULLETVEL
+        if yellow.colliderect(bullet):
+            pygame.event.post(pygame.event.Event(YELLOWHIT))
+            redBullets.remove(bullet)
+        elif bullet.x < 0:
+            redBullets.remove(bullet)
+
 
 
 def drawWinner(text):
@@ -113,11 +135,13 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
                 pygame.quit()
+                
         keysPressed = pygame.key.get_pressed()
         yellowControl(keysPressed, yellow)
         redControl(keysPressed, red)
-        drawWindow(red, yellow, redBullets,
-                   yellowBullets, redHealth, yellowHealth)
+        drawWindow(red, yellow, redBullets, yellowBullets, redHealth, yellowHealth)
     main()
+
+
 if __name__ == "__main__":
     main()
